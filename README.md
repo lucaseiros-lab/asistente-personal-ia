@@ -61,16 +61,40 @@ El usuario no debería tener que organizar manualmente sus tareas.
 
 # Estado del proyecto
 
-🚧 En diseño funcional.
+🚧 En desarrollo activo (ver `product/` para directivas y arquitectura).
 
-Actualmente se está desarrollando:
+## Cómo correr el proyecto
 
-- Visión del producto
-- Arquitectura
-- PRD
-- Modelo de memoria
-- Sistema de priorización
-- Diseño conversacional
+Requisitos: Docker y Docker Compose.
+
+```bash
+cp backend/.env.example backend/.env
+cp frontend/.env.local.example frontend/.env.local
+# completar OPENAI_API_KEY y JWT_SECRET_KEY en backend/.env
+
+docker compose up --build
+```
+
+- Backend: http://localhost:8000 (docs interactivas en `/docs`)
+- Frontend: http://localhost:3000
+
+Las migraciones de base de datos (Alembic) se aplican automáticamente al iniciar el contenedor `backend`.
+
+### Desarrollo sin Docker
+
+```bash
+# Backend
+cd backend
+python3 -m venv .venv && . .venv/bin/activate
+pip install -r requirements-dev.txt
+alembic upgrade head
+uvicorn app.main:app --reload
+
+# Frontend
+cd frontend
+npm install
+npm run dev
+```
 
 ---
 
@@ -118,16 +142,16 @@ Asistente proactivo.
 
 ---
 
-# Tecnologías (tentativas)
+# Tecnologías (definitivas)
 
-- OpenAI GPT
-- n8n
-- PostgreSQL
-- Supabase
-- Flutter
-- FastAPI
-- GitHub
-- Docker
+Ver `product/02_ARQUITECTURA.md`.
+
+- Backend: Python + FastAPI + SQLAlchemy (async) + Alembic
+- Frontend: Next.js + React + TypeScript + Tailwind (PWA)
+- Base de datos: PostgreSQL + pgvector
+- IA: OpenAI (Structured Outputs)
+- Automatizaciones: n8n
+- Infraestructura: Docker + GitHub Actions (CI)
 
 ---
 
