@@ -55,5 +55,19 @@ services:
       - backend
     command: npm run dev
 
+  n8n:
+    image: n8nio/n8n:latest
+    restart: unless-stopped
+    environment:
+      N8N_HOST: localhost
+      N8N_PORT: 5678
+      WEBHOOK_URL: http://localhost:5678/
+      GENERIC_TIMEZONE: America/Argentina/Buenos_Aires
+    ports:
+      - "5678:5678"
+    volumes:
+      - n8n_data:/home/node/.n8n
+
 volumes:
   db_data:
+  n8n_data:

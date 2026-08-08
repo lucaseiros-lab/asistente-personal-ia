@@ -7,6 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.ai.schemas import ActionType, AssistantAction
 from app.core.logging import get_logger
+from app.integrations.n8n_client import N8nClient
 from app.memory.semantic import SemanticMemoryService
 from app.models.company import Company
 from app.models.enums import EntityType, PriorityLevel, TaskStatus
@@ -50,8 +51,13 @@ class ActionExecutor:
     directamente desde el motor de IA.
     """
 
-    def __init__(self, semantic_memory: SemanticMemoryService | None = None) -> None:
+    def __init__(
+        self,
+        semantic_memory: SemanticMemoryService | None = None,
+        n8n_client: N8nClient | None = None,
+    ) -> None:
         self._semantic = semantic_memory or SemanticMemoryService()
+        self._n8n = n8n_client or N8nClient()
 
     async def execute(
         self, db: AsyncSession, *, user_id: uuid.UUID, action: AssistantAction
@@ -148,6 +154,16 @@ class ActionExecutor:
         await db.commit()
         await db.refresh(obj)
         await self._index(db, user_id, EntityType.TAREA, obj.id, f"Tarea: {obj.title}. {obj.description or ''}")
+        if obj.priority == PriorityLevel.ROJO:
+            await self._n8n.dispatch_event(
+                "tarea-urgente",
+                {
+                    "user_id": str(user_id),
+                    "task_id": str(obj.id),
+                    "title": obj.title,
+                    "due_date": obj.due_date.isoformat() if obj.due_date else None,
+                },
+            )
         return ExecutedAction(action.type, EntityType.TAREA, obj.id, obj.title)
 
     async def _complete_task(
@@ -198,6 +214,16 @@ class ActionExecutor:
         await db.commit()
         await db.refresh(obj)
         await self._index(db, user_id, EntityType.EVENTO, obj.id, f"Evento: {obj.title}. {obj.description or ''}")
+        await self._n8n.dispatch_event(
+            "evento-creado",
+            {
+                "user_id": str(user_id),
+                "event_id": str(obj.id),
+                "title": obj.title,
+                "start_time": obj.start_time.isoformat(),
+                "location": obj.location,
+            },
+        )
         return ExecutedAction(action.type, EntityType.EVENTO, obj.id, obj.title)
 
     async def _create_reminder(
