@@ -1,7 +1,9 @@
 from functools import lru_cache
 
-from pydantic import Field
+from pydantic import Field, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+_INSECURE_DEFAULT_JWT_SECRET = "CHANGE_ME_IN_PRODUCTION"
 
 
 class Settings(BaseSettings):
@@ -24,7 +26,7 @@ class Settings(BaseSettings):
     )
 
     # Seguridad / JWT
-    JWT_SECRET_KEY: str = Field(default="CHANGE_ME_IN_PRODUCTION")
+    JWT_SECRET_KEY: str = Field(default=_INSECURE_DEFAULT_JWT_SECRET)
     JWT_ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
     REFRESH_TOKEN_EXPIRE_DAYS: int = 30
@@ -46,6 +48,15 @@ class Settings(BaseSettings):
     @property
     def is_production(self) -> bool:
         return self.ENVIRONMENT == "production"
+
+    @model_validator(mode="after")
+    def _validate_production_secrets(self) -> "Settings":
+        if self.is_production and self.JWT_SECRET_KEY == _INSECURE_DEFAULT_JWT_SECRET:
+            raise ValueError(
+                "JWT_SECRET_KEY debe configurarse con un valor seguro en producción "
+                "(ENVIRONMENT=production usa todavía el valor por defecto)"
+            )
+        return self
 
 
 @lru_cache
