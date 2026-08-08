@@ -6,15 +6,15 @@ como contexto al Motor IA antes de interpretar un mensaje.
 """
 
 import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.enums import PriorityLevel, ProjectStatus, ReminderStatus, TaskStatus
 from app.models.event import Event
-from app.models.project import Project
 from app.models.preference import Preference
+from app.models.project import Project
 from app.models.reminder import Reminder
 from app.models.task import Task
 
@@ -24,7 +24,7 @@ _PRIORITY_ORDER = {PriorityLevel.ROJO: 0, PriorityLevel.AMARILLO: 1, PriorityLev
 async def build_context_snapshot(db: AsyncSession, user_id: uuid.UUID) -> str:
     """Devuelve un resumen en texto plano del estado estructurado del usuario."""
 
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     sections: list[str] = []
 
     tasks_result = await db.execute(
@@ -53,7 +53,10 @@ async def build_context_snapshot(db: AsyncSession, user_id: uuid.UUID) -> str:
     )
     events = list(events_result.scalars().all())
     if events:
-        lines = [f"- {e.title}: {e.start_time.isoformat()}" + (f" en {e.location}" if e.location else "") for e in events]
+        lines = [
+            f"- {e.title}: {e.start_time.isoformat()}" + (f" en {e.location}" if e.location else "")
+            for e in events
+        ]
         sections.append("Próximos eventos:\n" + "\n".join(lines))
 
     reminders_result = await db.execute(

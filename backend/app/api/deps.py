@@ -5,10 +5,13 @@ from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.ai.engine import AIEngine
 from app.core.security import InvalidTokenError, TokenType, decode_token
 from app.db.session import get_db
+from app.memory.conversational import ConversationalMemoryService
+from app.memory.orchestrator import MemoryContextBuilder
 from app.models.user import User
-from app.services.auth_service import get_user_by_email
+from app.services.action_executor import ActionExecutor
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login")
 
@@ -41,3 +44,19 @@ async def get_current_user(
 
 async def get_current_active_user(user: User = Depends(get_current_user)) -> User:
     return user
+
+
+def get_ai_engine() -> AIEngine:
+    return AIEngine()
+
+
+def get_memory_context_builder() -> MemoryContextBuilder:
+    return MemoryContextBuilder()
+
+
+def get_conversational_memory() -> ConversationalMemoryService:
+    return ConversationalMemoryService()
+
+
+def get_action_executor() -> ActionExecutor:
+    return ActionExecutor()

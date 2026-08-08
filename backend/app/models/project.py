@@ -1,4 +1,5 @@
 import uuid
+from typing import TYPE_CHECKING
 
 from sqlalchemy import Enum as SAEnum
 from sqlalchemy import ForeignKey, String, Text
@@ -7,6 +8,14 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base, SoftDeleteMixin, TimestampMixin, UUIDMixin
 from app.models.enums import PriorityLevel, ProjectStatus
+
+if TYPE_CHECKING:
+    from app.models.company import Company
+    from app.models.event import Event
+    from app.models.expense import Expense
+    from app.models.idea import Idea
+    from app.models.task import Task
+    from app.models.user import User
 
 
 class Project(UUIDMixin, TimestampMixin, SoftDeleteMixin, Base):
