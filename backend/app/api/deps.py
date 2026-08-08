@@ -6,6 +6,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.ai.engine import AIEngine
+from app.ai.transcription import TranscriptionService
 from app.core.security import InvalidTokenError, TokenType, decode_token
 from app.db.session import get_db
 from app.memory.conversational import ConversationalMemoryService
@@ -60,3 +61,7 @@ def get_conversational_memory() -> ConversationalMemoryService:
 
 def get_action_executor() -> ActionExecutor:
     return ActionExecutor()
+
+
+def get_transcription_service() -> TranscriptionService:
+    return TranscriptionService()
