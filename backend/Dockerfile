@@ -11,10 +11,13 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libpq-dev \
     && rm -rf /var/lib/apt/lists/*
 
-COPY requirements.txt .
+# El contexto de build es la raíz del repo (ver docker-compose.yml) para poder
+# incluir prompts/, fuente única de verdad de los prompts del sistema.
+COPY backend/requirements.txt .
 RUN pip install -r requirements.txt
 
-COPY . .
+COPY backend/ .
+COPY prompts/ ./prompts/
 
 EXPOSE 8000
 
