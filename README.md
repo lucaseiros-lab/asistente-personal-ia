@@ -96,6 +96,28 @@ npm install
 npm run dev
 ```
 
+### Tests
+
+```bash
+cd backend
+. .venv/bin/activate
+pytest
+```
+
+La suite normal (`pytest`) usa siempre dobles de prueba (`unittest.mock`) para las llamadas a OpenAI — nunca pega contra la API real ni consume crédito. Requiere una base Postgres con `pgvector` accesible vía `DATABASE_URL`.
+
+#### Pruebas end-to-end contra la API real de OpenAI
+
+`backend/tests/test_openai_e2e.py` ejercita `AIEngine`, `EmbeddingService`, `TranscriptionService` y el endpoint de chat completo contra la API real de OpenAI (sin mocks). Se saltean automáticamente salvo que se corran así:
+
+```bash
+cd backend
+. .venv/bin/activate
+OPENAI_API_KEY=sk-... RUN_OPENAI_E2E_TESTS=1 pytest tests/test_openai_e2e.py -v
+```
+
+Hacen llamadas reales y pagas (chat, embeddings, texto-a-voz y transcripción), así que no corren en la suite normal ni en CI.
+
 ---
 
 # Roadmap
