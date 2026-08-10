@@ -1,3 +1,6 @@
+import uuid
+from datetime import datetime
+
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -7,6 +10,7 @@ from app.core.security import (
     hash_password,
     verify_password,
 )
+from app.models.revoked_token import RevokedToken
 from app.models.user import User
 from app.schemas.auth import TokenPair
 from app.schemas.user import UserCreate
@@ -59,3 +63,16 @@ def issue_token_pair(user: User) -> TokenPair:
         access_token=create_access_token(user.id),
         refresh_token=create_refresh_token(user.id),
     )
+
+
+async def is_refresh_token_revoked(db: AsyncSession, jti: uuid.UUID) -> bool:
+    result = await db.execute(select(RevokedToken).where(RevokedToken.jti == jti))
+    return result.scalar_one_or_none() is not None
+
+
+async def revoke_refresh_token(db: AsyncSession, *, jti: uuid.UUID, expires_at: datetime) -> None:
+    """Idempotente: revocar un jti ya revocado no falla."""
+    if await is_refresh_token_revoked(db, jti):
+        return
+    db.add(RevokedToken(jti=jti, expires_at=expires_at))
+    await db.commit()

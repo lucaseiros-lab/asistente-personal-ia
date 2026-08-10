@@ -6,16 +6,16 @@ from pydantic import BaseModel, ConfigDict, Field
 
 class CompanyCreate(BaseModel):
     name: str = Field(min_length=1, max_length=255)
-    industry: str | None = None
-    website: str | None = None
-    notes: str | None = None
+    industry: str | None = Field(default=None, max_length=255)
+    website: str | None = Field(default=None, max_length=500)
+    notes: str | None = Field(default=None, max_length=5000)
 
 
 class CompanyUpdate(BaseModel):
-    name: str | None = None
-    industry: str | None = None
-    website: str | None = None
-    notes: str | None = None
+    name: str | None = Field(default=None, min_length=1, max_length=255)
+    industry: str | None = Field(default=None, max_length=255)
+    website: str | None = Field(default=None, max_length=500)
+    notes: str | None = Field(default=None, max_length=5000)
 
 
 class CompanyRead(BaseModel):

@@ -16,7 +16,7 @@ class InboundAutomationEvent(BaseModel):
     user_email: EmailStr
     source: DocumentSourceType
     title: str = Field(min_length=1, max_length=500)
-    content: str = Field(min_length=1)
+    content: str = Field(min_length=1, max_length=200_000)
 
 
 class InboundAutomationEventResult(BaseModel):

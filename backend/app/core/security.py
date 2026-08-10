@@ -1,7 +1,8 @@
+from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 from enum import StrEnum
 from typing import Any
-from uuid import UUID
+from uuid import UUID, uuid4
 
 import bcrypt
 import jwt
@@ -16,6 +17,13 @@ class TokenType(StrEnum):
 
 class InvalidTokenError(Exception):
     pass
+
+
+@dataclass(frozen=True, slots=True)
+class TokenPayload:
+    subject: UUID
+    jti: UUID
+    expires_at: datetime
 
 
 def hash_password(plain_password: str) -> str:
@@ -35,6 +43,7 @@ def _create_token(subject: UUID, token_type: TokenType, expires_delta: timedelta
     payload: dict[str, Any] = {
         "sub": str(subject),
         "type": token_type.value,
+        "jti": str(uuid4()),
         "iat": now,
         "exp": now + expires_delta,
     }
@@ -53,7 +62,7 @@ def create_refresh_token(subject: UUID) -> str:
     )
 
 
-def decode_token(token: str, expected_type: TokenType) -> UUID:
+def decode_token(token: str, expected_type: TokenType) -> TokenPayload:
     try:
         payload = jwt.decode(token, settings.JWT_SECRET_KEY, algorithms=[settings.JWT_ALGORITHM])
     except jwt.PyJWTError as exc:
@@ -63,7 +72,9 @@ def decode_token(token: str, expected_type: TokenType) -> UUID:
         raise InvalidTokenError(f"Se esperaba un token de tipo '{expected_type.value}'")
 
     subject = payload.get("sub")
-    if subject is None:
-        raise InvalidTokenError("Token sin subject")
+    jti = payload.get("jti")
+    exp = payload.get("exp")
+    if subject is None or jti is None or exp is None:
+        raise InvalidTokenError("Token con claims incompletos")
 
-    return UUID(subject)
+    return TokenPayload(subject=UUID(subject), jti=UUID(jti), expires_at=datetime.fromtimestamp(exp, tz=UTC))

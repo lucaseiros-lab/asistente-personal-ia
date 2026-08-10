@@ -107,6 +107,16 @@ export const api = {
 
   me: () => request<User>("/auth/me"),
 
+  logout: () => {
+    const { refreshToken } = useAuthStore.getState();
+    if (!refreshToken) return Promise.resolve();
+    return fetch(`${API_URL}/auth/logout`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ refresh_token: refreshToken }),
+    }).catch(() => undefined);
+  },
+
   listConversations: () => request<Conversation[]>("/conversations"),
   createConversation: (title?: string) =>
     request<Conversation>("/conversations", { method: "POST", body: { title } }),

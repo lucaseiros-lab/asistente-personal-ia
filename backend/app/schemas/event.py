@@ -9,18 +9,18 @@ from app.models.enums import PriorityLevel
 class EventCreate(BaseModel):
     title: str = Field(min_length=1, max_length=500)
     project_id: uuid.UUID | None = None
-    description: str | None = None
-    location: str | None = None
+    description: str | None = Field(default=None, max_length=5000)
+    location: str | None = Field(default=None, max_length=500)
     start_time: datetime
     end_time: datetime | None = None
     priority: PriorityLevel = PriorityLevel.AMARILLO
 
 
 class EventUpdate(BaseModel):
-    title: str | None = None
+    title: str | None = Field(default=None, min_length=1, max_length=500)
     project_id: uuid.UUID | None = None
-    description: str | None = None
-    location: str | None = None
+    description: str | None = Field(default=None, max_length=5000)
+    location: str | None = Field(default=None, max_length=500)
     start_time: datetime | None = None
     end_time: datetime | None = None
     priority: PriorityLevel | None = None

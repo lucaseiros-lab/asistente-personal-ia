@@ -7,21 +7,21 @@ from pydantic import BaseModel, ConfigDict, Field
 class PersonCreate(BaseModel):
     full_name: str = Field(min_length=1, max_length=255)
     company_id: uuid.UUID | None = None
-    role: str | None = None
-    email: str | None = None
-    phone: str | None = None
-    relationship_context: str | None = None
-    notes: str | None = None
+    role: str | None = Field(default=None, max_length=255)
+    email: str | None = Field(default=None, max_length=255)
+    phone: str | None = Field(default=None, max_length=50)
+    relationship_context: str | None = Field(default=None, max_length=255)
+    notes: str | None = Field(default=None, max_length=5000)
 
 
 class PersonUpdate(BaseModel):
-    full_name: str | None = None
+    full_name: str | None = Field(default=None, min_length=1, max_length=255)
     company_id: uuid.UUID | None = None
-    role: str | None = None
-    email: str | None = None
-    phone: str | None = None
-    relationship_context: str | None = None
-    notes: str | None = None
+    role: str | None = Field(default=None, max_length=255)
+    email: str | None = Field(default=None, max_length=255)
+    phone: str | None = Field(default=None, max_length=50)
+    relationship_context: str | None = Field(default=None, max_length=255)
+    notes: str | None = Field(default=None, max_length=5000)
 
 
 class PersonRead(BaseModel):

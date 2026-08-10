@@ -23,6 +23,20 @@ def test_inbound_webhook_rejects_missing_token(client: TestClient, unique_email:
     assert response.status_code == 401
 
 
+def test_inbound_webhook_rejects_oversized_content(client: TestClient, unique_email: str) -> None:
+    response = client.post(
+        "/api/v1/automations/webhook",
+        json={
+            "user_email": unique_email,
+            "source": "gmail",
+            "title": "x",
+            "content": "a" * 200_001,
+        },
+        headers={"x-webhook-token": "test-webhook-token"},
+    )
+    assert response.status_code == 422
+
+
 def test_inbound_webhook_rejects_wrong_token(client: TestClient, unique_email: str) -> None:
     response = client.post(
         "/api/v1/automations/webhook",

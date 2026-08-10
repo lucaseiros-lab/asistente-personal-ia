@@ -10,18 +10,18 @@ class ExpenseCreate(BaseModel):
     project_id: uuid.UUID | None = None
     amount: Decimal
     currency: str = Field(default="ARS", min_length=3, max_length=3)
-    category: str | None = None
-    notes: str | None = None
+    category: str | None = Field(default=None, max_length=255)
+    notes: str | None = Field(default=None, max_length=5000)
     expense_date: date
 
 
 class ExpenseUpdate(BaseModel):
-    description: str | None = None
+    description: str | None = Field(default=None, min_length=1, max_length=500)
     project_id: uuid.UUID | None = None
     amount: Decimal | None = None
-    currency: str | None = None
-    category: str | None = None
-    notes: str | None = None
+    currency: str | None = Field(default=None, min_length=3, max_length=3)
+    category: str | None = Field(default=None, max_length=255)
+    notes: str | None = Field(default=None, max_length=5000)
     expense_date: date | None = None
 
 

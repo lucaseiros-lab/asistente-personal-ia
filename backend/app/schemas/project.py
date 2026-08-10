@@ -9,15 +9,15 @@ from app.models.enums import PriorityLevel, ProjectStatus
 class ProjectCreate(BaseModel):
     name: str = Field(min_length=1, max_length=255)
     company_id: uuid.UUID | None = None
-    description: str | None = None
+    description: str | None = Field(default=None, max_length=5000)
     status: ProjectStatus = ProjectStatus.ACTIVO
     priority: PriorityLevel = PriorityLevel.VERDE
 
 
 class ProjectUpdate(BaseModel):
-    name: str | None = None
+    name: str | None = Field(default=None, min_length=1, max_length=255)
     company_id: uuid.UUID | None = None
-    description: str | None = None
+    description: str | None = Field(default=None, max_length=5000)
     status: ProjectStatus | None = None
     priority: PriorityLevel | None = None
 

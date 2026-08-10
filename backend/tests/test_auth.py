@@ -56,3 +56,44 @@ def test_refresh_token_issues_new_pair(client: TestClient, unique_email: str) ->
 def test_protected_endpoint_without_token_is_rejected(client: TestClient) -> None:
     response = client.get("/api/v1/auth/me")
     assert response.status_code == 401
+
+
+def test_refresh_token_is_rotated_and_old_one_is_rejected(
+    client: TestClient, unique_email: str
+) -> None:
+    client.post(
+        "/api/v1/auth/register",
+        json={"email": unique_email, "password": "password123", "full_name": "Lucas"},
+    )
+    login = client.post("/api/v1/auth/login", json={"email": unique_email, "password": "password123"})
+    old_refresh_token = login.json()["refresh_token"]
+
+    first = client.post("/api/v1/auth/refresh", json={"refresh_token": old_refresh_token})
+    assert first.status_code == 200
+
+    reused = client.post("/api/v1/auth/refresh", json={"refresh_token": old_refresh_token})
+    assert reused.status_code == 401
+
+    new_refresh_token = first.json()["refresh_token"]
+    second = client.post("/api/v1/auth/refresh", json={"refresh_token": new_refresh_token})
+    assert second.status_code == 200
+
+
+def test_logout_revokes_refresh_token(client: TestClient, unique_email: str) -> None:
+    client.post(
+        "/api/v1/auth/register",
+        json={"email": unique_email, "password": "password123", "full_name": "Lucas"},
+    )
+    login = client.post("/api/v1/auth/login", json={"email": unique_email, "password": "password123"})
+    refresh_token = login.json()["refresh_token"]
+
+    logout = client.post("/api/v1/auth/logout", json={"refresh_token": refresh_token})
+    assert logout.status_code == 204
+
+    response = client.post("/api/v1/auth/refresh", json={"refresh_token": refresh_token})
+    assert response.status_code == 401
+
+
+def test_logout_with_invalid_token_is_idempotent(client: TestClient) -> None:
+    response = client.post("/api/v1/auth/logout", json={"refresh_token": "not-a-real-token"})
+    assert response.status_code == 204

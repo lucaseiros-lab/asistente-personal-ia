@@ -1,7 +1,8 @@
-from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
+from fastapi import APIRouter, Depends, File, HTTPException, Request, UploadFile, status
 
 from app.ai.transcription import TranscriptionError, TranscriptionService
 from app.api.deps import get_current_active_user, get_transcription_service
+from app.core.rate_limit import limiter
 from app.models.user import User
 from app.schemas.voice import TranscriptionResponse
 
@@ -11,7 +12,9 @@ MAX_AUDIO_BYTES = 25 * 1024 * 1024  # límite de la API de transcripción de Ope
 
 
 @router.post("/transcribe", response_model=TranscriptionResponse)
+@limiter.limit("20/minute")
 async def transcribe_audio(
+    request: Request,
     file: UploadFile = File(...),
     user: User = Depends(get_current_active_user),
     transcription_service: TranscriptionService = Depends(get_transcription_service),

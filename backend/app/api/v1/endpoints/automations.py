@@ -1,8 +1,11 @@
-from fastapi import APIRouter, Depends, Header, HTTPException, status
+import hmac
+
+from fastapi import APIRouter, Depends, Header, HTTPException, Request, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import get_db_session
 from app.core.config import settings
+from app.core.rate_limit import limiter
 from app.memory.semantic import SemanticMemoryService
 from app.models.document import Document
 from app.models.enums import EntityType
@@ -13,7 +16,9 @@ router = APIRouter(prefix="/automations", tags=["automations"])
 
 
 @router.post("/webhook", response_model=InboundAutomationEventResult, status_code=status.HTTP_202_ACCEPTED)
+@limiter.limit("30/minute")
 async def receive_automation_event(
+    request: Request,
     payload: InboundAutomationEvent,
     x_webhook_token: str = Header(default=""),
     db: AsyncSession = Depends(get_db_session),
@@ -26,7 +31,9 @@ async def receive_automation_event(
     memoria semántica, disponible para el Motor IA en la próxima conversación.
     """
 
-    if not settings.N8N_WEBHOOK_TOKEN or x_webhook_token != settings.N8N_WEBHOOK_TOKEN:
+    if not settings.N8N_WEBHOOK_TOKEN or not hmac.compare_digest(
+        x_webhook_token, settings.N8N_WEBHOOK_TOKEN
+    ):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token de webhook inválido")
 
     user = await get_user_by_email(db, payload.user_email)

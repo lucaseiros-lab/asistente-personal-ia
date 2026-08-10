@@ -13,6 +13,7 @@ from app.models.person import Person
 from app.models.preference import Preference
 from app.models.project import Project
 from app.models.reminder import Reminder
+from app.models.revoked_token import RevokedToken
 from app.models.tag import EntityTag, Tag
 from app.models.task import Task
 from app.models.user import User
@@ -32,6 +33,7 @@ __all__ = [
     "Preference",
     "Project",
     "Reminder",
+    "RevokedToken",
     "Tag",
     "Task",
     "User",

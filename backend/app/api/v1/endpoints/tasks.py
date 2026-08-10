@@ -1,6 +1,6 @@
 import uuid
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import get_current_active_user, get_db_session
@@ -15,9 +15,12 @@ crud = CRUDBase[Task, TaskCreate, TaskUpdate](Task)
 
 @router.get("", response_model=list[TaskRead])
 async def list_tasks(
-    db: AsyncSession = Depends(get_db_session), user: User = Depends(get_current_active_user)
+    limit: int = Query(default=50, ge=1, le=100),
+    offset: int = Query(default=0, ge=0),
+    db: AsyncSession = Depends(get_db_session),
+    user: User = Depends(get_current_active_user),
 ) -> list[Task]:
-    return await crud.list(db, user_id=user.id)
+    return await crud.list(db, user_id=user.id, limit=limit, offset=offset)
 
 
 @router.post("", response_model=TaskRead, status_code=status.HTTP_201_CREATED)

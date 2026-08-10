@@ -38,7 +38,8 @@ export function Sidebar() {
     router.push(`/chat/${conversation.id}`);
   }
 
-  function handleLogout() {
+  async function handleLogout() {
+    await api.logout();
     logout();
     router.replace("/login");
   }

@@ -1,6 +1,6 @@
 import uuid
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -14,9 +14,14 @@ router = APIRouter(prefix="/tags", tags=["tags"])
 
 @router.get("", response_model=list[TagRead])
 async def list_tags(
-    db: AsyncSession = Depends(get_db_session), user: User = Depends(get_current_active_user)
+    limit: int = Query(default=50, ge=1, le=100),
+    offset: int = Query(default=0, ge=0),
+    db: AsyncSession = Depends(get_db_session),
+    user: User = Depends(get_current_active_user),
 ) -> list[Tag]:
-    result = await db.execute(select(Tag).where(Tag.user_id == user.id))
+    result = await db.execute(
+        select(Tag).where(Tag.user_id == user.id).limit(limit).offset(offset)
+    )
     return list(result.scalars().all())
 
 

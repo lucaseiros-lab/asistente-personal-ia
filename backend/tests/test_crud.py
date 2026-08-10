@@ -23,6 +23,27 @@ def test_task_crud_lifecycle(client: TestClient, auth_headers: dict[str, str]) -
     assert not any(t["id"] == task["id"] for t in listed_after)
 
 
+def test_task_list_pagination_is_exposed(client: TestClient, auth_headers: dict[str, str]) -> None:
+    for i in range(5):
+        client.post("/api/v1/tasks", json={"title": f"Tarea paginada {i}"}, headers=auth_headers)
+
+    first_page = client.get("/api/v1/tasks?limit=2&offset=0", headers=auth_headers)
+    assert first_page.status_code == 200
+    assert len(first_page.json()) == 2
+
+    second_page = client.get("/api/v1/tasks?limit=2&offset=2", headers=auth_headers)
+    assert len(second_page.json()) == 2
+
+    first_ids = {t["id"] for t in first_page.json()}
+    second_ids = {t["id"] for t in second_page.json()}
+    assert first_ids.isdisjoint(second_ids)
+
+    # limit fuera de rango es rechazado, no truncado silenciosamente
+    assert client.get("/api/v1/tasks?limit=1000", headers=auth_headers).status_code == 422
+    assert client.get("/api/v1/tasks?limit=0", headers=auth_headers).status_code == 422
+    assert client.get("/api/v1/tasks?offset=-1", headers=auth_headers).status_code == 422
+
+
 def test_task_not_found_returns_404(client: TestClient, auth_headers: dict[str, str]) -> None:
     import uuid
 

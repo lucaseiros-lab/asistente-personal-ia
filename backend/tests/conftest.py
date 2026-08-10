@@ -21,10 +21,20 @@ import pytest_asyncio
 from fastapi.testclient import TestClient
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.rate_limit import limiter
 from app.core.security import hash_password
 from app.db.session import AsyncSessionLocal
 from app.main import app
 from app.models.user import User
+
+
+@pytest.fixture(autouse=True)
+def _reset_rate_limiter():
+    """El limiter usa storage en memoria compartido por proceso: sin este reset,
+    el volumen de requests de toda la suite podría disparar límites pensados
+    para tráfico real de un solo test."""
+    limiter.reset()
+    yield
 
 
 @pytest.fixture

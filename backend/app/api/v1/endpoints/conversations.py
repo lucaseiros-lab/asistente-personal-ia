@@ -1,6 +1,6 @@
 import uuid
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -13,6 +13,7 @@ from app.api.deps import (
     get_db_session,
     get_memory_context_builder,
 )
+from app.core.rate_limit import limiter
 from app.memory.conversational import ConversationalMemoryService
 from app.memory.orchestrator import MemoryContextBuilder
 from app.models.conversation import Conversation
@@ -45,9 +46,12 @@ async def _get_owned_conversation(
 
 @router.get("", response_model=list[ConversationRead])
 async def list_conversations(
-    db: AsyncSession = Depends(get_db_session), user: User = Depends(get_current_active_user)
+    limit: int = Query(default=50, ge=1, le=100),
+    offset: int = Query(default=0, ge=0),
+    db: AsyncSession = Depends(get_db_session),
+    user: User = Depends(get_current_active_user),
 ) -> list[Conversation]:
-    return await crud.list(db, user_id=user.id)
+    return await crud.list(db, user_id=user.id, limit=limit, offset=offset)
 
 
 @router.post("", response_model=ConversationRead, status_code=status.HTTP_201_CREATED)
@@ -92,7 +96,9 @@ async def list_messages(
 
 
 @router.post("/{conversation_id}/messages", response_model=ChatResponse)
+@limiter.limit("20/minute")
 async def send_message(
+    request: Request,
     conversation_id: uuid.UUID,
     payload: ChatRequest,
     db: AsyncSession = Depends(get_db_session),

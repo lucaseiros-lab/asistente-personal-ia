@@ -6,9 +6,16 @@ import pytest
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import settings
+from app.memory.conversational import (
+    MESSAGES_TO_KEEP_AFTER_SUMMARY,
+    SUMMARIZE_THRESHOLD,
+    ConversationalMemoryService,
+)
 from app.memory.semantic import SemanticMemoryService
 from app.memory.structured import build_context_snapshot
-from app.models.enums import EntityType, PriorityLevel, ProjectStatus, TaskStatus
+from app.models.conversation import Conversation
+from app.models.enums import EntityType, MessageRole, PriorityLevel, ProjectStatus, TaskStatus
+from app.models.message import Message
 from app.models.project import Project
 from app.models.task import Task
 from app.models.user import User
@@ -82,3 +89,54 @@ async def test_semantic_memory_index_upserts_existing_entity(db_session: AsyncSe
 
     assert first.id == second.id
     assert second.content == "v2"
+
+
+async def _create_conversation_with_messages(
+    db_session: AsyncSession, user: User, count: int
+) -> Conversation:
+    conversation = Conversation(user_id=user.id, title="Larga")
+    db_session.add(conversation)
+    await db_session.flush()
+    for i in range(count):
+        role = MessageRole.USER if i % 2 == 0 else MessageRole.ASSISTANT
+        db_session.add(Message(conversation_id=conversation.id, role=role, content=f"mensaje {i}"))
+    await db_session.commit()
+    await db_session.refresh(conversation)
+    return conversation
+
+
+@pytest.mark.asyncio
+async def test_maybe_compact_does_nothing_below_threshold(db_session: AsyncSession, db_user: User) -> None:
+    conversation = await _create_conversation_with_messages(db_session, db_user, SUMMARIZE_THRESHOLD)
+
+    fake_client = AsyncMock()
+    service = ConversationalMemoryService(client=fake_client)
+    await service.maybe_compact(db_session, conversation=conversation)
+
+    fake_client.chat.completions.create.assert_not_called()
+    assert conversation.summary is None
+
+
+@pytest.mark.asyncio
+async def test_maybe_compact_summarizes_when_over_threshold(
+    db_session: AsyncSession, db_user: User
+) -> None:
+    conversation = await _create_conversation_with_messages(db_session, db_user, SUMMARIZE_THRESHOLD + 5)
+
+    fake_summary_message = AsyncMock(content="Resumen: el usuario coordinó una reunión.")
+    fake_choice = AsyncMock(message=fake_summary_message)
+    fake_completion = AsyncMock(choices=[fake_choice])
+    fake_client = AsyncMock()
+    fake_client.chat.completions.create = AsyncMock(return_value=fake_completion)
+
+    service = ConversationalMemoryService(client=fake_client)
+    await service.maybe_compact(db_session, conversation=conversation)
+
+    fake_client.chat.completions.create.assert_called_once()
+    assert conversation.summary == "Resumen: el usuario coordinó una reunión."
+
+    # los mensajes más recientes siguen disponibles como turnos, no se borraron
+    turns = await service.get_recent_turns(
+        db_session, conversation_id=conversation.id, limit=MESSAGES_TO_KEEP_AFTER_SUMMARY
+    )
+    assert len(turns) == MESSAGES_TO_KEEP_AFTER_SUMMARY

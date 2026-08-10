@@ -9,16 +9,16 @@ from app.models.enums import PriorityLevel, TaskStatus
 class TaskCreate(BaseModel):
     title: str = Field(min_length=1, max_length=500)
     project_id: uuid.UUID | None = None
-    description: str | None = None
+    description: str | None = Field(default=None, max_length=5000)
     status: TaskStatus = TaskStatus.PENDIENTE
     priority: PriorityLevel = PriorityLevel.VERDE
     due_date: datetime | None = None
 
 
 class TaskUpdate(BaseModel):
-    title: str | None = None
+    title: str | None = Field(default=None, min_length=1, max_length=500)
     project_id: uuid.UUID | None = None
-    description: str | None = None
+    description: str | None = Field(default=None, max_length=5000)
     status: TaskStatus | None = None
     priority: PriorityLevel | None = None
     due_date: datetime | None = None
