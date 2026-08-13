@@ -22,11 +22,13 @@ duradera — no hace falta tarjeta ni gastar nada.
 - La base de datos en Supabase **se pausa tras 7 días sin ninguna
   actividad**. No se pierde nada, pero hay que entrar al panel de Supabase
   y tocar "Resume project" antes de volver a usar la app.
-- La capa gratuita de Gemini tiene un límite de uso (para `gemini-2.5-flash`:
-  10 solicitudes por minuto, 250 por día). Para uso personal (unos pocos
-  mensajes por día) es más que suficiente; si algún día lo superás, la API
-  simplemente devuelve un error temporal hasta el minuto/día siguiente, no
-  se cobra nada de golpe.
+- La capa gratuita de Gemini tiene un límite de uso (15 solicitudes por
+  minuto, 1500 por día). Para uso personal (unos pocos mensajes por día) es
+  más que suficiente; si algún día lo superás, la API simplemente devuelve
+  un error temporal hasta el minuto/día siguiente, no se cobra nada de golpe.
+- En la capa gratuita, Google puede usar el contenido de tus solicitudes
+  para entrenar sus modelos (no pasa en los planes pagos). Tenelo presente
+  si vas a anotar información sensible.
 
 No hay forma de evitar la parte de Render/Supabase sin pagar. Si en algún
 momento eso empieza a molestar, la app entera se puede migrar a un plan
@@ -74,10 +76,10 @@ pago (Render/Railway) sin cambiar código.
    DATABASE_URL_SYNC=<el de Supabase, formato psycopg2 de arriba>
    JWT_SECRET_KEY=<generar uno propio, ver abajo>
    GEMINI_API_KEY=<tu clave de Google AI Studio>
-   GEMINI_CHAT_MODEL=gemini-2.5-flash
+   GEMINI_CHAT_MODEL=gemini-flash-latest
    GEMINI_EMBEDDING_MODEL=gemini-embedding-001
    GEMINI_EMBEDDING_DIMENSIONS=768
-   GEMINI_TRANSCRIBE_MODEL=gemini-2.5-flash
+   GEMINI_TRANSCRIBE_MODEL=gemini-flash-latest
    CORS_ORIGINS=["http://localhost:3000"]
    ```
 

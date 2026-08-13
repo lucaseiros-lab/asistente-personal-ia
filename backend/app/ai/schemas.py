@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from enum import StrEnum
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, Field
 
 from app.models.enums import PriorityLevel
 
@@ -30,10 +30,10 @@ class AssistantAction(BaseModel):
     """Acción estructurada única. Los campos no aplicables al `type` quedan en null.
 
     Se usan campos nullable (en vez de una unión discriminada) porque es el
-    patrón recomendado por OpenAI para Structured Outputs en modo estricto.
+    patrón que mejor soportan los Structured Outputs de los modelos de IA:
+    todo campo figura siempre en el schema, aunque sea `null` para un `type`
+    dado, en vez de variar la forma del objeto según el tipo de acción.
     """
-
-    model_config = ConfigDict(extra="forbid")
 
     type: ActionType = Field(description="Tipo de acción detectada")
     title: str = Field(description="Título breve y claro de la acción o entidad")
@@ -84,8 +84,6 @@ class AssistantInterpretation(BaseModel):
     Este es el único contrato por el que la IA puede comunicar intenciones al
     resto del sistema: nunca se parsea texto libre para extraer acciones.
     """
-
-    model_config = ConfigDict(extra="forbid")
 
     reply: str = Field(description="Respuesta breve, clara y en español para mostrar al usuario")
     priority: PriorityLevel = Field(

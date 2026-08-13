@@ -22,6 +22,7 @@ import pytest
 from fastapi.testclient import TestClient
 from google.genai import types
 
+from app.ai.client import get_ai_client
 from app.ai.embeddings import EmbeddingService
 from app.ai.engine import AIEngine
 from app.ai.transcription import TranscriptionService
@@ -34,6 +35,18 @@ pytestmark = pytest.mark.skipif(
         "(hace llamadas reales a la API de Gemini, sujetas al free tier)"
     ),
 )
+
+
+@pytest.fixture(autouse=True)
+def _fresh_ai_client():
+    """El cliente de Gemini se cachea (`lru_cache`) para vivir todo el proceso,
+    que es lo correcto en producción (un solo loop de eventos, el de uvicorn).
+    En tests, cada test corre en su propio loop de eventos nuevo, así que hay
+    que forzar un cliente nuevo por test para no reusar uno atado a un loop
+    ya cerrado."""
+    get_ai_client.cache_clear()
+    yield
+    get_ai_client.cache_clear()
 
 
 @pytest.mark.asyncio

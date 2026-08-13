@@ -36,9 +36,9 @@ class Settings(BaseSettings):
 
     # Google Gemini
     GEMINI_API_KEY: str = Field(default="")
-    GEMINI_CHAT_MODEL: str = "gemini-2.5-flash"
+    GEMINI_CHAT_MODEL: str = "gemini-flash-latest"
     GEMINI_EMBEDDING_MODEL: str = "gemini-embedding-001"
-    GEMINI_TRANSCRIBE_MODEL: str = "gemini-2.5-flash"
+    GEMINI_TRANSCRIBE_MODEL: str = "gemini-flash-latest"
     GEMINI_EMBEDDING_DIMENSIONS: int = 768
 
     # Automatizaciones
