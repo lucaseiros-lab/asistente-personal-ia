@@ -5,6 +5,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.ai.schemas import ActionType, AssistantAction
+from app.core.config import settings
 from app.memory.semantic import SemanticMemoryService
 from app.models.enums import EntityType, PriorityLevel, TaskStatus
 from app.models.person import Person
@@ -39,7 +40,7 @@ def _action(**overrides) -> AssistantAction:
 @pytest.fixture
 def executor() -> ActionExecutor:
     fake_embeddings = AsyncMock()
-    fake_embeddings.embed_text = AsyncMock(return_value=[0.0] * 1536)
+    fake_embeddings.embed_text = AsyncMock(return_value=[0.0] * settings.GEMINI_EMBEDDING_DIMENSIONS)
     return ActionExecutor(semantic_memory=SemanticMemoryService(embedding_service=fake_embeddings))
 
 

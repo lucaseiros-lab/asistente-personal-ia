@@ -6,6 +6,7 @@ from fastapi.testclient import TestClient
 from app.ai.engine import AIEngine
 from app.ai.schemas import ActionType, AssistantAction, AssistantInterpretation
 from app.api.deps import get_action_executor, get_ai_engine, get_memory_context_builder
+from app.core.config import settings
 from app.main import app
 from app.memory.orchestrator import MemoryContextBuilder
 from app.memory.semantic import SemanticMemoryService
@@ -23,7 +24,7 @@ class _FakeAIEngine(AIEngine):
 
 def _fake_semantic_service() -> SemanticMemoryService:
     fake_embeddings = AsyncMock()
-    fake_embeddings.embed_text = AsyncMock(return_value=[0.0] * 1536)
+    fake_embeddings.embed_text = AsyncMock(return_value=[0.0] * settings.GEMINI_EMBEDDING_DIMENSIONS)
     return SemanticMemoryService(embedding_service=fake_embeddings)
 
 

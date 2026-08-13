@@ -1,10 +1,10 @@
 from functools import lru_cache
 
-from openai import AsyncOpenAI
+from google import genai
 
 from app.core.config import settings
 
 
 @lru_cache
-def get_openai_client() -> AsyncOpenAI:
-    return AsyncOpenAI(api_key=settings.OPENAI_API_KEY)
+def get_ai_client() -> genai.Client:
+    return genai.Client(api_key=settings.GEMINI_API_KEY)

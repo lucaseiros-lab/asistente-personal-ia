@@ -32,7 +32,7 @@ class MemoryEmbedding(UUIDMixin, Base):
     source_type: Mapped[EntityType] = mapped_column(SAEnum(EntityType, name="entity_type"), nullable=False)
     source_id: Mapped[uuid.UUID] = mapped_column(PG_UUID(as_uuid=True), nullable=False, index=True)
     content: Mapped[str] = mapped_column(Text, nullable=False, comment="Texto fuente que fue embebido")
-    embedding: Mapped[list[float]] = mapped_column(Vector(settings.OPENAI_EMBEDDING_DIMENSIONS), nullable=False)
+    embedding: Mapped[list[float]] = mapped_column(Vector(settings.GEMINI_EMBEDDING_DIMENSIONS), nullable=False)
     embedding_model: Mapped[str] = mapped_column(String(100), nullable=False)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False

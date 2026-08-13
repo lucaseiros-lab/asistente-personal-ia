@@ -1,7 +1,8 @@
-from openai import AsyncOpenAI
+from google import genai
+from google.genai import types
 from tenacity import retry, retry_if_exception_type, stop_after_attempt, wait_exponential
 
-from app.ai.client import get_openai_client
+from app.ai.client import get_ai_client
 from app.ai.prompts import load_system_prompt
 from app.ai.schemas import AssistantInterpretation, ChatTurn
 from app.core.config import settings
@@ -19,11 +20,11 @@ class AIEngine:
 
     Nunca se hace parsing de texto libre: toda intención, prioridad y acción
     proviene de un objeto `AssistantInterpretation` validado por el SDK de
-    OpenAI contra un JSON Schema estricto.
+    Gemini contra un JSON Schema estricto.
     """
 
-    def __init__(self, client: AsyncOpenAI | None = None) -> None:
-        self._client = client or get_openai_client()
+    def __init__(self, client: genai.Client | None = None) -> None:
+        self._client = client or get_ai_client()
 
     @retry(
         reraise=True,
@@ -42,26 +43,31 @@ class AIEngine:
         if memory_context:
             system_prompt = f"{system_prompt}\n\n## Contexto de memoria relevante\n{memory_context}"
 
-        messages: list[dict[str, str]] = [{"role": "system", "content": system_prompt}]
+        contents: list[types.Content] = []
         for turn in conversation_history or []:
-            messages.append({"role": turn.role, "content": turn.content})
-        messages.append({"role": "user", "content": user_message})
+            role = "model" if turn.role == "assistant" else "user"
+            contents.append(types.Content(role=role, parts=[types.Part.from_text(text=turn.content)]))
+        contents.append(types.Content(role="user", parts=[types.Part.from_text(text=user_message)]))
 
         try:
-            completion = await self._client.chat.completions.parse(
-                model=settings.OPENAI_CHAT_MODEL,
-                messages=messages,  # type: ignore[arg-type]
-                response_format=AssistantInterpretation,
+            response = await self._client.aio.models.generate_content(
+                model=settings.GEMINI_CHAT_MODEL,
+                contents=contents,
+                config=types.GenerateContentConfig(
+                    system_instruction=system_prompt,
+                    response_mime_type="application/json",
+                    response_schema=AssistantInterpretation,
+                ),
             )
         except Exception as exc:  # noqa: BLE001 - se traduce a un error de dominio
             logger.error("ai_engine_call_failed", error=str(exc))
             raise AIEngineError("Fallo al interpretar el mensaje con el Motor IA") from exc
 
-        choice = completion.choices[0]
-        if choice.message.refusal:
-            raise AIEngineError(f"El modelo rechazó la solicitud: {choice.message.refusal}")
+        block_reason = response.prompt_feedback.block_reason if response.prompt_feedback else None
+        if block_reason:
+            raise AIEngineError(f"El modelo rechazó la solicitud: {block_reason}")
 
-        parsed = choice.message.parsed
+        parsed = response.parsed
         if parsed is None:
             raise AIEngineError("El modelo no devolvió una salida estructurada válida")
 

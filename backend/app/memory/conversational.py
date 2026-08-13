@@ -9,11 +9,11 @@ mensajes.
 
 import uuid
 
-from openai import AsyncOpenAI
+from google import genai
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.ai.client import get_openai_client
+from app.ai.client import get_ai_client
 from app.ai.schemas import ChatTurn
 from app.core.config import settings
 from app.models.conversation import Conversation
@@ -25,8 +25,8 @@ MESSAGES_TO_KEEP_AFTER_SUMMARY = 20
 
 
 class ConversationalMemoryService:
-    def __init__(self, client: AsyncOpenAI | None = None) -> None:
-        self._client = client or get_openai_client()
+    def __init__(self, client: genai.Client | None = None) -> None:
+        self._client = client or get_ai_client()
 
     async def get_recent_turns(
         self, db: AsyncSession, *, conversation_id: uuid.UUID, limit: int = RECENT_TURNS_LIMIT
@@ -80,11 +80,11 @@ class ConversationalMemoryService:
             f"Resumen previo (si existe): {conversation.summary or 'ninguno'}\n\n"
             f"Conversación a resumir:\n{transcript}"
         )
-        completion = await self._client.chat.completions.create(
-            model=settings.OPENAI_CHAT_MODEL,
-            messages=[{"role": "user", "content": prompt}],
+        response = await self._client.aio.models.generate_content(
+            model=settings.GEMINI_CHAT_MODEL,
+            contents=prompt,
         )
-        new_summary = completion.choices[0].message.content or conversation.summary or ""
+        new_summary = response.text or conversation.summary or ""
 
         conversation.summary = new_summary.strip()
         await db.commit()

@@ -51,7 +51,7 @@ async def test_structured_snapshot_empty_state(db_session: AsyncSession, db_user
 
 @pytest.mark.asyncio
 async def test_semantic_memory_orders_by_similarity(db_session: AsyncSession, db_user: User) -> None:
-    dim = settings.OPENAI_EMBEDDING_DIMENSIONS
+    dim = settings.GEMINI_EMBEDDING_DIMENSIONS
     vec_a = [1.0] + [0.0] * (dim - 1)
     vec_b = [0.0, 1.0] + [0.0] * (dim - 2)
 
@@ -74,7 +74,7 @@ async def test_semantic_memory_orders_by_similarity(db_session: AsyncSession, db
 
 @pytest.mark.asyncio
 async def test_semantic_memory_index_upserts_existing_entity(db_session: AsyncSession, db_user: User) -> None:
-    dim = settings.OPENAI_EMBEDDING_DIMENSIONS
+    dim = settings.GEMINI_EMBEDDING_DIMENSIONS
     fake_embeddings = AsyncMock()
     fake_embeddings.embed_text = AsyncMock(return_value=[0.5] * dim)
     service = SemanticMemoryService(embedding_service=fake_embeddings)
@@ -113,7 +113,7 @@ async def test_maybe_compact_does_nothing_below_threshold(db_session: AsyncSessi
     service = ConversationalMemoryService(client=fake_client)
     await service.maybe_compact(db_session, conversation=conversation)
 
-    fake_client.chat.completions.create.assert_not_called()
+    fake_client.aio.models.generate_content.assert_not_called()
     assert conversation.summary is None
 
 
@@ -123,16 +123,14 @@ async def test_maybe_compact_summarizes_when_over_threshold(
 ) -> None:
     conversation = await _create_conversation_with_messages(db_session, db_user, SUMMARIZE_THRESHOLD + 5)
 
-    fake_summary_message = AsyncMock(content="Resumen: el usuario coordinó una reunión.")
-    fake_choice = AsyncMock(message=fake_summary_message)
-    fake_completion = AsyncMock(choices=[fake_choice])
+    fake_response = AsyncMock(text="Resumen: el usuario coordinó una reunión.")
     fake_client = AsyncMock()
-    fake_client.chat.completions.create = AsyncMock(return_value=fake_completion)
+    fake_client.aio.models.generate_content = AsyncMock(return_value=fake_response)
 
     service = ConversationalMemoryService(client=fake_client)
     await service.maybe_compact(db_session, conversation=conversation)
 
-    fake_client.chat.completions.create.assert_called_once()
+    fake_client.aio.models.generate_content.assert_called_once()
     assert conversation.summary == "Resumen: el usuario coordinó una reunión."
 
     # los mensajes más recientes siguen disponibles como turnos, no se borraron

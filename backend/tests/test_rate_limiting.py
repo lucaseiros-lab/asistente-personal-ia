@@ -10,6 +10,7 @@ from app.api.deps import (
     get_conversational_memory,
     get_memory_context_builder,
 )
+from app.core.config import settings
 from app.main import app
 from app.memory.conversational import ConversationalMemoryService
 from app.memory.orchestrator import MemoryContextBuilder
@@ -65,18 +66,16 @@ class _FakeAIEngine:
 
 def _fake_semantic_service() -> SemanticMemoryService:
     fake_embeddings = AsyncMock()
-    fake_embeddings.embed_text = AsyncMock(return_value=[0.0] * 1536)
+    fake_embeddings.embed_text = AsyncMock(return_value=[0.0] * settings.GEMINI_EMBEDDING_DIMENSIONS)
     return SemanticMemoryService(embedding_service=fake_embeddings)
 
 
-def _fake_openai_client_for_summaries() -> AsyncMock:
-    """Cliente OpenAI simulado que responde con un resumen de texto plano,
+def _fake_ai_client_for_summaries() -> AsyncMock:
+    """Cliente Gemini simulado que responde con un resumen de texto plano,
     para cuando `maybe_compact` se dispara durante el test (>30 mensajes)."""
-    message = AsyncMock(content="resumen de prueba")
-    choice = AsyncMock(message=message)
-    completion = AsyncMock(choices=[choice])
+    fake_response = AsyncMock(text="resumen de prueba")
     fake_client = AsyncMock()
-    fake_client.chat.completions.create = AsyncMock(return_value=completion)
+    fake_client.aio.models.generate_content = AsyncMock(return_value=fake_response)
     return fake_client
 
 
@@ -88,7 +87,7 @@ def test_chat_message_rate_limit_returns_429_after_threshold(
     app.dependency_overrides[get_memory_context_builder] = lambda: MemoryContextBuilder(semantic_service)
     app.dependency_overrides[get_action_executor] = lambda: ActionExecutor(semantic_service)
     app.dependency_overrides[get_conversational_memory] = lambda: ConversationalMemoryService(
-        client=_fake_openai_client_for_summaries()
+        client=_fake_ai_client_for_summaries()
     )
     try:
         conversation = client.post("/api/v1/conversations", json={}, headers=auth_headers).json()

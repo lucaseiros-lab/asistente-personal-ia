@@ -34,12 +34,12 @@ class Settings(BaseSettings):
     # CORS
     CORS_ORIGINS: list[str] = ["http://localhost:3000"]
 
-    # OpenAI
-    OPENAI_API_KEY: str = Field(default="")
-    OPENAI_CHAT_MODEL: str = "gpt-4o-mini"
-    OPENAI_EMBEDDING_MODEL: str = "text-embedding-3-small"
-    OPENAI_TRANSCRIBE_MODEL: str = "whisper-1"
-    OPENAI_EMBEDDING_DIMENSIONS: int = 1536
+    # Google Gemini
+    GEMINI_API_KEY: str = Field(default="")
+    GEMINI_CHAT_MODEL: str = "gemini-2.5-flash"
+    GEMINI_EMBEDDING_MODEL: str = "gemini-embedding-001"
+    GEMINI_TRANSCRIBE_MODEL: str = "gemini-2.5-flash"
+    GEMINI_EMBEDDING_DIMENSIONS: int = 768
 
     # Automatizaciones
     N8N_BASE_URL: str = Field(default="")

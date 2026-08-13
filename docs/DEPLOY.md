@@ -10,6 +10,10 @@ para una parte distinta del sistema:
 | Backend (FastAPI) | [Render](https://render.com) | Free tier con Docker, sin tarjeta |
 | Frontend (Next.js) | [Vercel](https://vercel.com) | Free tier pensado para Next.js, sin tarjeta |
 
+La parte de IA (entender mensajes, memoria semántica, transcripción de voz)
+usa la API de **Google Gemini**, que sí tiene una capa gratuita real y
+duradera — no hace falta tarjeta ni gastar nada.
+
 ## Antes de empezar: las limitaciones del plan gratis
 
 - El backend en Render **se duerme tras 15 minutos sin uso**. El primer
@@ -18,10 +22,15 @@ para una parte distinta del sistema:
 - La base de datos en Supabase **se pausa tras 7 días sin ninguna
   actividad**. No se pierde nada, pero hay que entrar al panel de Supabase
   y tocar "Resume project" antes de volver a usar la app.
+- La capa gratuita de Gemini tiene un límite de uso (para `gemini-2.5-flash`:
+  10 solicitudes por minuto, 250 por día). Para uso personal (unos pocos
+  mensajes por día) es más que suficiente; si algún día lo superás, la API
+  simplemente devuelve un error temporal hasta el minuto/día siguiente, no
+  se cobra nada de golpe.
 
-No hay forma de evitar esto sin pagar. Si en algún momento eso empieza a
-molestar, la app entera se puede migrar a un plan pago (Render/Railway) sin
-cambiar código.
+No hay forma de evitar la parte de Render/Supabase sin pagar. Si en algún
+momento eso empieza a molestar, la app entera se puede migrar a un plan
+pago (Render/Railway) sin cambiar código.
 
 ## Paso 1 — Base de datos en Supabase
 
@@ -64,19 +73,20 @@ cambiar código.
    DATABASE_URL=<el de Supabase, formato asyncpg de arriba>
    DATABASE_URL_SYNC=<el de Supabase, formato psycopg2 de arriba>
    JWT_SECRET_KEY=<generar uno propio, ver abajo>
-   OPENAI_API_KEY=<tu clave de OpenAI>
-   OPENAI_CHAT_MODEL=gpt-4o-mini
-   OPENAI_EMBEDDING_MODEL=text-embedding-3-small
-   OPENAI_EMBEDDING_DIMENSIONS=1536
-   OPENAI_TRANSCRIBE_MODEL=whisper-1
+   GEMINI_API_KEY=<tu clave de Google AI Studio>
+   GEMINI_CHAT_MODEL=gemini-2.5-flash
+   GEMINI_EMBEDDING_MODEL=gemini-embedding-001
+   GEMINI_EMBEDDING_DIMENSIONS=768
+   GEMINI_TRANSCRIBE_MODEL=gemini-2.5-flash
    CORS_ORIGINS=["http://localhost:3000"]
    ```
 
-   Para generar un `JWT_SECRET_KEY` seguro, correr en cualquier terminal:
+   La clave de Gemini se saca gratis, sin tarjeta, en
+   [aistudio.google.com/apikey](https://aistudio.google.com/apikey) con
+   cualquier cuenta de Google — "Create API key".
 
-   ```
-   openssl rand -hex 32
-   ```
+   Para generar un `JWT_SECRET_KEY` seguro, usar el botón **"Generate"** que
+   Render muestra al lado del campo (no hace falta inventarlo a mano).
 
    `CORS_ORIGINS` se deja así por ahora — se actualiza en el Paso 4 con el
    dominio real del frontend.

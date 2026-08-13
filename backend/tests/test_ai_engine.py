@@ -34,12 +34,11 @@ def _make_interpretation() -> AssistantInterpretation:
     )
 
 
-def _fake_client(parsed: AssistantInterpretation | None, refusal: str | None = None) -> MagicMock:
+def _fake_client(parsed: AssistantInterpretation | None, block_reason: str | None = None) -> MagicMock:
     fake_client = MagicMock()
-    message = MagicMock(parsed=parsed, refusal=refusal)
-    choice = MagicMock(message=message)
-    completion = MagicMock(choices=[choice])
-    fake_client.chat.completions.parse = AsyncMock(return_value=completion)
+    prompt_feedback = MagicMock(block_reason=block_reason) if block_reason else None
+    response = MagicMock(parsed=parsed, prompt_feedback=prompt_feedback)
+    fake_client.aio.models.generate_content = AsyncMock(return_value=response)
     return fake_client
 
 
@@ -55,10 +54,9 @@ async def test_interpret_message_returns_parsed_structured_output() -> None:
     )
 
     assert result == expected
-    call_kwargs = fake_client.chat.completions.parse.call_args.kwargs
-    assert call_kwargs["response_format"] is AssistantInterpretation
-    assert call_kwargs["messages"][0]["role"] == "system"
-    assert call_kwargs["messages"][-1] == {"role": "user", "content": "Recordame llamar a Juan"}
+    call_kwargs = fake_client.aio.models.generate_content.call_args.kwargs
+    assert call_kwargs["config"].response_schema is AssistantInterpretation
+    assert call_kwargs["contents"][-1].parts[0].text == "Recordame llamar a Juan"
 
 
 @pytest.mark.asyncio
@@ -68,13 +66,13 @@ async def test_interpret_message_includes_memory_context_in_system_prompt() -> N
 
     await engine.interpret_message(user_message="hola", memory_context="Tareas pendientes: ninguna")
 
-    system_message = fake_client.chat.completions.parse.call_args.kwargs["messages"][0]["content"]
-    assert "Tareas pendientes: ninguna" in system_message
+    system_instruction = fake_client.aio.models.generate_content.call_args.kwargs["config"].system_instruction
+    assert "Tareas pendientes: ninguna" in system_instruction
 
 
 @pytest.mark.asyncio
 async def test_interpret_message_raises_on_refusal() -> None:
-    fake_client = _fake_client(parsed=None, refusal="No puedo ayudar con eso")
+    fake_client = _fake_client(parsed=None, block_reason="SAFETY")
     engine = AIEngine(client=fake_client)
 
     with pytest.raises(AIEngineError, match="rechazó"):
@@ -83,7 +81,7 @@ async def test_interpret_message_raises_on_refusal() -> None:
 
 @pytest.mark.asyncio
 async def test_interpret_message_raises_when_parsed_is_none() -> None:
-    fake_client = _fake_client(parsed=None, refusal=None)
+    fake_client = _fake_client(parsed=None, block_reason=None)
     engine = AIEngine(client=fake_client)
 
     with pytest.raises(AIEngineError, match="salida estructurada"):
@@ -93,7 +91,7 @@ async def test_interpret_message_raises_when_parsed_is_none() -> None:
 @pytest.mark.asyncio
 async def test_interpret_message_wraps_api_errors() -> None:
     fake_client = MagicMock()
-    fake_client.chat.completions.parse = AsyncMock(side_effect=RuntimeError("boom"))
+    fake_client.aio.models.generate_content = AsyncMock(side_effect=RuntimeError("boom"))
     engine = AIEngine(client=fake_client)
 
     with pytest.raises(AIEngineError):

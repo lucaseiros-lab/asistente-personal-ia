@@ -44,7 +44,7 @@ class SemanticMemoryService:
         if record is not None:
             record.content = content
             record.embedding = vector
-            record.embedding_model = settings.OPENAI_EMBEDDING_MODEL
+            record.embedding_model = settings.GEMINI_EMBEDDING_MODEL
         else:
             record = MemoryEmbedding(
                 user_id=user_id,
@@ -52,7 +52,7 @@ class SemanticMemoryService:
                 source_id=source_id,
                 content=content,
                 embedding=vector,
-                embedding_model=settings.OPENAI_EMBEDDING_MODEL,
+                embedding_model=settings.GEMINI_EMBEDDING_MODEL,
             )
             db.add(record)
 

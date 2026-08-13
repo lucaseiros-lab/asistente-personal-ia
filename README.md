@@ -70,7 +70,7 @@ Requisitos: Docker y Docker Compose.
 ```bash
 cp backend/.env.example backend/.env
 cp frontend/.env.local.example frontend/.env.local
-# completar OPENAI_API_KEY y JWT_SECRET_KEY en backend/.env
+# completar GEMINI_API_KEY y JWT_SECRET_KEY en backend/.env
 
 docker compose up --build
 ```
@@ -104,19 +104,19 @@ cd backend
 pytest
 ```
 
-La suite normal (`pytest`) usa siempre dobles de prueba (`unittest.mock`) para las llamadas a OpenAI — nunca pega contra la API real ni consume crédito. Requiere una base Postgres con `pgvector` accesible vía `DATABASE_URL`.
+La suite normal (`pytest`) usa siempre dobles de prueba (`unittest.mock`) para las llamadas a Gemini — nunca pega contra la API real. Requiere una base Postgres con `pgvector` accesible vía `DATABASE_URL`.
 
-#### Pruebas end-to-end contra la API real de OpenAI
+#### Pruebas end-to-end contra la API real de Gemini
 
-`backend/tests/test_openai_e2e.py` ejercita `AIEngine`, `EmbeddingService`, `TranscriptionService` y el endpoint de chat completo contra la API real de OpenAI (sin mocks). Se saltean automáticamente salvo que se corran así:
+`backend/tests/test_gemini_e2e.py` ejercita `AIEngine`, `EmbeddingService`, `TranscriptionService` y el endpoint de chat completo contra la API real de Gemini (sin mocks). Se saltean automáticamente salvo que se corran así:
 
 ```bash
 cd backend
 . .venv/bin/activate
-OPENAI_API_KEY=sk-... RUN_OPENAI_E2E_TESTS=1 pytest tests/test_openai_e2e.py -v
+GEMINI_API_KEY=... RUN_GEMINI_E2E_TESTS=1 pytest tests/test_gemini_e2e.py -v
 ```
 
-Hacen llamadas reales y pagas (chat, embeddings, texto-a-voz y transcripción), así que no corren en la suite normal ni en CI.
+Hacen llamadas reales (chat, embeddings, texto-a-voz y transcripción), sujetas a los límites del free tier de Gemini, así que no corren en la suite normal ni en CI.
 
 ### Despliegue en producción
 
@@ -177,7 +177,7 @@ Ver `product/02_ARQUITECTURA.md`.
 - Backend: Python + FastAPI + SQLAlchemy (async) + Alembic
 - Frontend: Next.js + React + TypeScript + Tailwind (PWA)
 - Base de datos: PostgreSQL + pgvector
-- IA: OpenAI (Structured Outputs)
+- IA: Google Gemini (Structured Outputs)
 - Automatizaciones: n8n
 - Infraestructura: Docker + GitHub Actions (CI)
 
