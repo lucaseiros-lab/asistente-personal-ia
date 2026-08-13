@@ -118,6 +118,12 @@ OPENAI_API_KEY=sk-... RUN_OPENAI_E2E_TESTS=1 pytest tests/test_openai_e2e.py -v
 
 Hacen llamadas reales y pagas (chat, embeddings, texto-a-voz y transcripción), así que no corren en la suite normal ni en CI.
 
+### Despliegue en producción
+
+Ver [`docs/DEPLOY.md`](docs/DEPLOY.md) para una guía paso a paso de cómo
+tener la app corriendo en internet 24/7 usando servicios gratuitos
+(Supabase + Render + Vercel).
+
 ---
 
 # Roadmap
