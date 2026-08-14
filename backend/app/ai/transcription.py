@@ -31,12 +31,15 @@ class TranscriptionService:
 
     @retry(reraise=True, stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=1, max=8))
     async def transcribe(self, audio_bytes: bytes, *, filename: str, content_type: str) -> str:
+        # El navegador manda tipos como "audio/webm;codecs=opus"; la API de
+        # Gemini solo reconoce el tipo base ("audio/webm"), sin el códec.
+        mime_type = content_type.split(";", 1)[0].strip() or "audio/webm"
         try:
             response = await self._client.aio.models.generate_content(
                 model=settings.GEMINI_TRANSCRIBE_MODEL,
                 contents=[
                     _TRANSCRIBE_PROMPT,
-                    types.Part.from_bytes(data=audio_bytes, mime_type=content_type),
+                    types.Part.from_bytes(data=audio_bytes, mime_type=mime_type),
                 ],
             )
         except Exception as exc:  # noqa: BLE001
